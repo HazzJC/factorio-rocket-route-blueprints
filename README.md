@@ -1,78 +1,81 @@
 # Rocket Route Blueprints
 
-A single-file, offline tool that generates a **Factorio blueprint book for one rocket route** in Space Exploration:
-a Nauvis supply sender, a launch outpost on a planet, moon or in space, and a receiver on Nauvis or in Nauvis orbit.
-Pick a planet and a raw material, copy the book, paste it into the game. The outpost launches when the rocket is full and asks Nauvis for supplies on its own.
+An offline, single-file HTML tool that generates a Factorio Space Exploration blueprint book for an automated ore rocket route: a Nauvis supply sender, an outpost on a planet/moon/orbit, and a receiver on Nauvis or in Nauvis orbit.
+
+Pick your planet and raw material, copy the generated string, and import it in-game. The outpost launches whenever the rocket is full and requests its own resupplies from Nauvis.
 
 ![The tool, showing the launch outpost layout](docs/screenshot.png)
 
-Built for Factorio 2.0.77 and Space Exploration 0.7.57 with AAI Containers, AAI Signal Transmission and Zithorian extra storage tanks.
+Built for Factorio 2.0.77 and Space Exploration 0.7.57, using AAI Containers, AAI Signal Transmission, and Zithorian extra storage tanks.
 
-## What you get
+## What's in the book
 
-| Blueprint | What it does |
-|---|---|
-| **1. Nauvis supply sender** | Loads a supply rocket with exactly what the outpost asked for (fuel, packed sections, capsules, mining fluid) and launches it. |
-| **2. Launch outpost** | Two storage warehouses buffer the ore so mining never stops while a rocket is away. Refineries turn fuel items into liquid rocket fuel. The pad launches when full. |
-| **3. Receiver** | Landing dock, ore provider, and a storehouse that passes recovered parts into your storage. On Nauvis or in orbit (space belts and scaffold included). |
+1. **Nauvis supply sender** — Loads a supply rocket with whatever the outpost is short on (fuel, packed cargo sections, capsules, mining fluid) and launches it.
+2. **Launch outpost** — Buffers ore in two warehouses so mining doesn't stall while a rocket is in flight, refines fuel items into liquid rocket fuel, and launches when full.
+3. **Receiver** — Landing dock, ore provider, and a storehouse that feeds recovered parts back into your logistics network. Works on Nauvis or in orbit (includes space belts and scaffolding).
 
-* **Fuel is computed, not guessed.** Choose a refinery productivity level and the outpost asks only for the shortfall: `ceil((reserve x launch fuel - stock) / liquid per item) + margin`.
-* **No piles of spare capsules or sections.** They are requested only when stock is below the reserve, and three valve inserters send any surplus home in the next ore rocket.
-* **Lights and displays that say what it is waiting on** (no fuel, no pad parts, no ore, dock not empty, requester chest not filled, stale wire ...).
-* Planet, moon or **space outposts**, 1 to 6 refineries, belt tiers, mining fluid as barrels or as sulfur + plates with chemical plants, optional debug displays.
-* A preview drawn from the game's own sprites, with moving belts, zoom, pan, hover names and a parts list.
+### A few design notes
+
+- Fuel requests are calculated from your refinery productivity level rather than guessed: `ceil((reserve x launch fuel - stock) / liquid per item) + margin`.
+- Capsules and cargo sections are only requested when stock drops below the reserve, and three valve inserters ship any extras back home on the next ore rocket so they don't pile up at the outpost.
+- Status lights and displays show what a pad is waiting on (missing fuel, pad parts, or ore, non-empty dock, unfilled requester chest, stale wire, etc.).
+- Configurable for planet, moon, or space outposts, 1–6 refineries, different belt tiers, mining fluid via barrels or on-site chemical plants (sulfur + plates), and optional debug displays.
+- Includes an interactive preview with zoom, pan, hover tooltips, animated belts, and a parts list.
 
 ![All four belt tiers rendered from the game's own sheets](docs/belts.png)
 
-## Use it
+## Usage
 
 ```bash
-node src/build.js          # writes dist/rocket-route-blueprints.html
-```
-
-Open the HTML file in a browser. No server and no network needed. In Factorio: blueprint library, Import string, paste.
-
-Suggested order in the game (the same notes are in the tool): place the receiver, then the outpost (read "fuel required" from its launch pad window, type it into the tool, copy the book again), then the Nauvis sender. If you already have an older sender for the route, deconstruct it first: pasting over it keeps its old wires (see [docs/DESIGN.md](docs/DESIGN.md), "The stale wire bug").
-
-## Game artwork (optional, personal use only)
-
-The repository contains no Wube Software or Space Exploration artwork. Without it the tool works the same but the preview shows flat boxes and chevron belts, and the icons are blank (`node src/build.js` says what is missing).
-
-To get the full look for your own copy, generate the artwork from your own game files:
-
-```bash
-export FSX_ROOT=/path/to/server-or-install   # holds runtime/windows/data, mods/ and agent-kit/sprites
-python src/make_belts.py png                 # animated belts from the base game and Space Exploration sheets
-python src/make_assets.py /path/to/fonts     # icons, machine sprites, floor tiles; fonts are optional
 node src/build.js
 ```
 
-`make_belts.py` needs only the game data and the SE graphics mod zip. `make_assets.py` also reads machine sprites that were captured from the running game by a private toolkit that is not part of this repository, so it will not run for you as is. Treat the generated file as personal: do not redistribute it.
-Text is set in Titillium Web (SIL Open Font License 1.1); the woff2 files are not bundled.
+This writes `dist/rocket-route-blueprints.html`. Open it in your browser (no server or internet connection needed), copy the blueprint book string, and paste it into Factorio via **Blueprint library -> Import string**.
 
-## Repository
+In-game placement order:
+1. Place the **receiver**.
+2. Place the **outpost**, check the "fuel required" number in its launch pad window, enter that into the tool, and re-copy the book.
+3. Place the **Nauvis sender**. If you're replacing an older sender on the same route, deconstruct the old one first—pasting directly over it leaves old circuit wires behind (see [docs/DESIGN.md](docs/DESIGN.md), "The stale wire bug").
 
-| Path | What |
-|---|---|
-| `src/bpgen.js` | the generator: layouts, circuits, wiring, validation, bill of materials, fuel plan |
-| `src/tool.src.html`, `src/style.css` | the UI (placeholders are filled in by the build) |
-| `src/build.js` | builds the single HTML file |
-| `src/make_belts.py`, `src/make_assets.py`, `src/ents.json` | artwork generators |
-| `src/test/` | the stress rig (see below) |
-| `docs/DESIGN.md` | design notes, test results, known limits |
+## Game artwork (optional)
 
-## How it was tested
+No Factorio or Space Exploration sprites are included in this repo. Without them, the tool still works fine, but the preview falls back to flat boxes, chevron belts, and blank icons (`node src/build.js` will print what's missing).
 
-The generator validates every blueprint it makes: no overlaps, every inserter hits its targets, everything powered.
+If you want the full sprites for your own local copy, you can build them from your own game installation:
 
-The designs were stress tested in headless Factorio 2.0.77 with the full mod set, on a copy of a real save at 100x game speed: 7 different routes in parallel for 90 game-minutes with real launch pads, landing docks, AAI links, warehouses, inserters, belts, combinators and logistic robots.
-Result: 120 ore launches and 149 supply launches, about 985,000 ore delivered, and the capsule, loose-section and packed-section stocks at the outposts stayed bounded with no upward trend. Fault runs (receiver stops consuming, Nauvis loses fuel) recovered on their own. Details are in [docs/DESIGN.md](docs/DESIGN.md).
+```bash
+export FSX_ROOT=/path/to/server-or-install   # expects runtime/windows/data, mods/, and agent-kit/sprites
+python src/make_belts.py png                 # animated belts from base game + SE graphics
+python src/make_assets.py /path/to/fonts     # icons, machine sprites, floor tiles (fonts are optional)
+node src/build.js
+```
 
-**Not tested:** real power draw, the Nauvis liquid fuel pipeline and its pressure, real mining rates, biters on the outpost, runs longer than 90 game-minutes, and more than 7 routes. The rig faked power, Nauvis fuel and the Nauvis cargo-section supply.
-The preview was checked in Chrome only. The AAI storehouse has no captured sprite, so the preview reuses the warehouse sprite.
+`make_belts.py` only needs the base game data and the SE graphics mod zip. `make_assets.py` also expects machine sprites captured from a running game using a private toolkit that isn't in this repo, so it won't work out of the box. Please don't redistribute the generated HTML if you bundle game assets into it.
 
-`src/test/` needs a private Factorio test harness (headless slots, save copies) that is not included; it is here as a record of how the numbers were produced, not as something you can run.
+The UI uses Titillium Web (SIL Open Font License 1.1); `.woff2` font files are not included.
 
-## Licence
+## Repo layout
 
-The code is MIT licensed (see `LICENSE`). Factorio, Space Exploration and the mods named above belong to their authors; this project is not affiliated with or endorsed by them. The screenshots show their artwork.
+- `src/bpgen.js` — blueprint generator (layouts, circuit logic, wiring, validation, BOM, fuel math)
+- `src/tool.src.html`, `src/style.css` — web UI template and styles
+- `src/build.js` — bundles everything into the standalone HTML file
+- `src/make_belts.py`, `src/make_assets.py`, `src/ents.json` — optional asset scripts
+- `src/test/` — headless stress-test rig (see below)
+- `docs/DESIGN.md` — architecture notes, test data, and known limits
+
+## Testing
+
+Every generated blueprint runs through a static check for entity overlaps, inserter reach, and power coverage.
+
+The layouts were also stress-tested in headless Factorio 2.0.77 with the full mod list on a copy of a real save at 100x speed: 7 routes running in parallel for 90 game-minutes with real pads, docks, AAI signal transmitters, warehouses, combinators, and bots. That run completed 120 ore launches and 149 supply launches (~985,000 ore delivered), with capsule and section stocks staying bounded and fault cases (stalled receiver, Nauvis fuel outage) recovering automatically. More details are in [docs/DESIGN.md](docs/DESIGN.md).
+
+Things that were **not** tested:
+- Real power draw, Nauvis liquid fuel pipeline throughput/pressure, actual mining rates, or biters
+- Runs longer than 90 game-minutes or more than 7 parallel routes (the test rig faked power, Nauvis fuel, and Nauvis cargo-section supply)
+- Browsers other than Chrome for the preview (also, the AAI storehouse reuses the warehouse sprite since it has no captured sprite)
+
+`src/test/` depends on a private headless test harness that isn't included here; it's kept in the repo mainly so you can see how the test numbers were gathered.
+
+## License
+
+Code is MIT-licensed (see [LICENSE](LICENSE)). Factorio, Space Exploration, and the mods listed above belong to their respective authors; this project isn't affiliated with or endorsed by them.
