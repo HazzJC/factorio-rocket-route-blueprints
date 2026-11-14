@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rocket Route Blueprints</title>
+<style>
+/*__STYLE__*/
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="panel hero">
+  <div class="slot" aria-hidden="true"><img data-icon="pad" alt=""></div>
+  <div>
+    <h1>Rocket Route Blueprints</h1>
+    <p>Pick a planet and a raw material. Get one blueprint book: a Nauvis supply sender, a launch outpost, and a receiver on Nauvis or in Nauvis orbit. The outpost launches when the rocket is full and calls for supplies on its own.</p>
+  </div>
+  <div class="mods" aria-label="Built for">
+    <span class="chip">Factorio 2.0.77</span><span class="chip">Space Exploration 0.7.57</span><span class="chip">AAI Containers</span><span class="chip">AAI Signal Transmission</span><span class="chip">Zithorian tanks</span>
+  </div>
+</header>
+
+<div class="layout">
+  <form class="panel side" id="cfg" onsubmit="return false" aria-label="Route settings">
+    <div class="group">
+      <h2 class="bar"><img data-icon="pad" alt=""><span class="t">Route</span></h2><div class="gbody">
+      <div class="field"><label for="planet">Planet or moon</label><input id="planet" type="text" value="Calidus" maxlength="40" autocomplete="off"><span class="hint">Only used for names (pads, AAI channel, labels). Use the real name so you can find things later.</span></div>
+      <div class="field"><label for="mat">Raw material to send</label><div class="withicon"><span class="slot"><img id="matIcon" data-icon="se-holmium-ore" alt=""></span><select id="mat"></select></div></div>
+      <div class="field" id="customRow" hidden><label for="customItem">Internal item name</label><input id="customItem" type="text" value="se-holmium-ore" autocomplete="off" spellcheck="false"><span class="hint">Exact prototype name, e.g. <code>se-iridium-ore</code>. Ore inserters are filtered to it.</span></div>
+      <div class="field"><span class="lbl" id="destLbl">Receive on</span>
+        <div class="seg" role="radiogroup" aria-labelledby="destLbl">
+          <label><input type="radio" name="dest" value="nauvis" checked><span>Nauvis surface</span></label>
+          <label><input type="radio" name="dest" value="orbit"><span>Nauvis orbit</span></label>
+        </div>
+        <span class="hint" id="destHint"></span>
+      </div>
+    </div></div>
+    <div class="group">
+      <h2 class="bar"><img data-icon="fuel" alt=""><span class="t">Supply rocket (Nauvis to outpost)</span></h2><div class="gbody">
+      <div class="row2">
+        <div class="field"><label for="launchFuel">Launch fuel needed</label><input id="launchFuel" type="number" min="0" step="1000" value="" aria-describedby="fuelHint"></div>
+        <div class="field"><label for="fuelItems">Max fuel items per rocket</label><input id="fuelItems" type="number" min="100" max="2600" step="50" value="2500"></div>
+      </div>
+      <span class="hint" id="fuelHint">Place the outpost and receiver, open the outpost launch pad window, read "fuel required" and type it on the left. The outpost then asks Nauvis for exactly what its stock is missing (fuel items = shortfall / liquid per item), never more than one rocket carries. With nothing typed it uses the number on the right as the limit.</span>
+      <div class="field" style="margin-top:var(--s3)"><label for="prodTier">Refinery modules (3 slots each)</label><select id="prodTier"></select><span class="hint" id="modHint"></span></div>
+      <div class="row2" style="margin-top:var(--s3)">
+        <div class="field"><label for="packed">Packed sections</label><input id="packed" type="number" min="20" max="60" step="5" value="20"></div>
+        <div class="field"><label for="capsules">Capsules</label><input id="capsules" type="number" min="1" max="4" value="1"></div>
+      </div>
+      <span class="hint">Packed sections and capsules are only requested when stock runs below the reserve. 20 packed unpack into the 100 sections one launch uses. Surplus is sent home with the ore.</span>
+      <div class="field" style="margin-top:var(--s3)"><label for="reserve">Launches kept in stock</label>
+        <select id="reserve"><option value="1">1 - ask only when the next launch is not covered</option><option value="2" selected>2 - one launch always spare</option><option value="3">3 - two launches spare</option></select></div>
+    </div></div>
+    <div class="group">
+      <h2 class="bar"><img data-icon="refinery" alt=""><span class="t">Outpost</span></h2><div class="gbody">
+      <div class="field"><label for="refineries">Fuel refineries</label>
+        <select id="refineries"><option value="1">1 refinery</option><option value="2" selected>2 refineries</option><option value="3">3 refineries</option><option value="4">4 refineries</option><option value="5">5 refineries</option><option value="6">6 refineries</option></select>
+        <span class="hint" id="refHint"></span></div>
+      <div class="field"><span class="lbl" id="spaceLbl">Outpost is on</span>
+        <div class="seg" role="radiogroup" aria-labelledby="spaceLbl">
+          <label><input type="radio" name="space" value="0" checked><span>Planet / moon</span></label>
+          <label><input type="radio" name="space" value="1"><span>Space (orbit, asteroids)</span></label>
+        </div>
+        <span class="hint" id="spaceHint"></span></div>
+      <div class="row2">
+        <div class="field"><label for="belt">Belt tier</label><select id="belt"><option value="transport-belt">Yellow</option><option value="fast-transport-belt" selected>Red</option><option value="express-transport-belt">Blue</option><option value="se-space-transport-belt">Space belt</option></select></div>
+        <div class="field"><label for="assembler">Unpacker</label><select id="assembler"><option value="assembling-machine-1">Assembler 1</option><option value="assembling-machine-2">Assembler 2</option><option value="assembling-machine-3" selected>Assembler 3</option></select></div>
+      </div>
+      <div class="field"><label for="bulk">Heavy-duty inserters</label>
+        <select id="bulk"><option value="1" selected>Bulk inserters where volume matters</option><option value="0">Fast inserters only</option></select></div>
+      <div class="field"><label for="fluidMode">Mining fluid</label>
+        <select id="fluidMode"><option value="auto" selected>Automatic (by material)</option><option value="none">None</option><option value="custom">Other fluid...</option></select>
+        <span class="hint" id="fluidHint"></span></div>
+      <div id="fluidRow" hidden>
+        <div class="row2">
+          <div class="field"><label for="fluidName">Fluid name</label><input id="fluidName" type="text" value="sulfuric-acid" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="fluidPerOre">Fluid per ore</label><input id="fluidPerOre" type="number" min="1" step="1" value=""></div>
+        </div>
+      </div>
+      <div id="supplyRows" hidden>
+        <div class="field"><label for="fluidSupply">How the fluid reaches the outpost</label>
+          <select id="fluidSupply"><option value="barrels" selected>Filled barrels (unbarrelled on site)</option><option value="sulfur">Sulfur + iron plates (acid made on site)</option></select>
+          <span class="hint" id="supplyHint"></span></div>
+        <div class="field" id="waterRow" hidden><label for="fluidWater">Water for the acid</label>
+          <select id="fluidWater"><option value="pipe" selected>Pipe it in (offshore pump or your own water)</option><option value="ice">Ship water ice and melt it on site</option></select></div>
+        <div class="field"><label for="barrels" id="amtLbl">Barrels per supply rocket</label><input id="barrels" type="number" min="10" max="25000" step="10" value=""><span class="hint">Leave empty for automatic.</span></div>
+      </div>
+      <div class="field"><label for="debug">Debug lamps and displays</label>
+        <select id="debug"><option value="1" selected>Include (recommended)</option><option value="0">Leave out</option></select>
+        <span class="hint">Lamps and display panels that say why a route is stuck: red = problem, yellow = waiting or blocked, blue = information.</span></div>
+      <div class="field"><label for="channel">AAI channel</label><input id="channel" type="text" maxlength="60" autocomplete="off"><span class="hint">Leave empty to use the route name. Each route needs its own channel.</span></div>
+    </div></div>
+    <div class="group"><div class="gbody"><div class="btns"><button type="button" class="ghost" id="reset">Reset to defaults</button></div></div></div>
+  </form>
+
+  <main class="panel" aria-label="Blueprints">
+    <div class="out-head">
+      <div><h3 id="title">&nbsp;</h3><div class="status" id="status"><span class="dot"></span><span>Building</span></div></div>
+      <div class="btns"><button class="primary" id="copyBook" type="button">Copy blueprint book</button><button type="button" id="dlBook">Download .txt</button></div>
+    </div>
+    <div class="kpis" id="kpis" aria-label="Key numbers"></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="stage" id="detail">
+      <div>
+        <div class="pv-bar">
+          <h2 id="pvTitle">Layout</h2>
+          <div class="tools">
+            <div class="zoomgrp" role="group" aria-label="Zoom"><button type="button" class="sq" id="zOut" aria-label="Zoom out">&minus;</button><span class="zv" id="zVal">Fit</span><button type="button" class="sq" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zFit" style="margin-left:6px;min-height:34px;padding:0 12px">Fit</button></div>
+            <label class="tg"><input type="checkbox" id="showWires" checked><span>Wires</span></label>
+            <label class="tg"><input type="checkbox" id="showLabels" checked><span>Labels</span></label>
+            <label class="tg"><input type="checkbox" id="animBelts" checked><span>Moving belts</span></label>
+          </div>
+        </div>
+        <div class="vp" id="preview" tabindex="0" aria-label="Blueprint layout preview. Drag to pan, Ctrl and scroll to zoom."></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="parts"><h2>Parts list</h2><div class="box"><table id="bom"></table></div></div>
+    </div>
+    <details class="strdet" id="strDet">
+      <summary>Blueprint string<span class="sub" id="strMeta"></span></summary>
+      <div class="sbody">
+        <textarea id="str" readonly spellcheck="false" aria-label="Blueprint string"></textarea>
+        <div class="btns"><button type="button" id="copyStr">Copy this string</button><span class="hint">In Factorio: open the blueprint library, press Import string, paste. The book lands in your library with all pad names, triggers and AAI channels already set.</span></div>
+      </div>
+    </details>
+    <div class="notes" id="notes"></div>
+  </main>
+</div>
+
+<section class="panel how" aria-label="How it works">
+  <details open><summary>How the loop runs</summary><div class="dbody">
+    <div class="flow">
+      <div><img data-icon="se-holmium-ore" alt=""><b>1. Ore fills two warehouses</b>Belts feed two storage warehouses (north and east of the pad) through filtered inserters. The pad loads from them, so mining never stops while a rocket is away. When all 500 slots are full and the rocket is fuelled, it launches to the receiver.</div>
+      <div><img data-icon="liquid" alt=""><b>2. Outpost counts stock</b>Liquid fuel (plus unconverted fuel items), sections (loose and packed) and capsules are added up on one red network. Fuel wanted = launches in stock x launch fuel; the shortfall divided by the liquid per fuel item is the number of items to request.</div>
+      <div><img data-icon="capsule" alt=""><b>3. AAI sends the request</b>Only what is missing is asked for: fuel items (exact count, up to one rocket), a packed-section lot and a capsule when those run below the reserve.</div>
+      <div><img data-icon="fuel" alt=""><b>4. Nauvis loads and shoots</b>Inserters load only what was asked for from the requester chest. When the load matches, a decider fires the launch and the supply rocket flies to the outpost dock.</div>
+    </div>
+    <p>Each rocket brings its own capsule and most of its sections back to the dock it lands at, so a route that lands one supply rocket per ore launch stays in balance by itself. If supply rockets outnumber ore launches (a refill that needs more than one rocket), three <b>valve</b> inserters on the outpost warehouse push the surplus capsules, sections and packed sections into the next ore rocket, so stock never piles up; the receiver's parts chest sends them home. Space Exploration only launches to an empty dock, so a warehouse drains the dock after every landing.</p>
+  </div></details>
+  <details><summary>Setup checklist</summary><div class="dbody"><ol>
+    <li>Place the <b>receiver</b> first so its dock name exists. For orbit, choose a clear patch of Nauvis orbit away from asteroids; scaffold tiles are in the blueprint.</li>
+    <li>Place the <b>outpost</b>. Open its launch pad and read "fuel required"; put that number in <i>Launch fuel needed</i> and copy the book again. For a space outpost choose a clear patch of orbit or asteroid belt.</li>
+    <li>Place the <b>Nauvis sender</b>. Pipe liquid rocket fuel into the buffer tank (pipe stub on the west side). It needs the fuel for its own launch to the outpost too. <b>If you already have an older sender of this route, deconstruct it first</b>: pasting a blueprint over an existing one keeps its old wires, and an old wire between the AAI receiver and the pad network makes older versions run away (the request numbers climb every tick and the pad loads dozens of capsules). This version cannot run away, but its link panel says STALE WIRE when it finds one.</li>
+    <li>Connect power to one substation per blueprint. The AAI sender and receiver stop working when under-powered.</li>
+    <li>Run ore onto the four outpost belts: two from the west along the north side, two from the south along the east side. Cover the Nauvis requester chest, the refinery modules and the receiver provider chests with roboports.</li>
+    <li>Nothing needs naming by hand: pad names, launch triggers, destinations and the AAI channel are stored in the blueprint tags.</li>
+  </ol></div></details>
+  <details><summary>Reading the lamps and panels (what is it waiting on?)</summary><div class="dbody"><ul>
+    <li><b>Outpost pad panel (south of the pad, with a red and a yellow lamp):</b> reads the pad itself. First true message wins: no destination, <i>waiting on fuel</i> (the pad tank is below one launch), <i>waiting on pad</i> (its 100 sections + capsule), <i>waiting on ore</i>, ready. "Ready" with no launch means the receiver dock is not empty or a rocket is still inbound. A second <b>stock panel</b> next to it reads everything the outpost holds: pile-up, no capsule, under 100 sections, fuel below the reserve.</li>
+    <li><b>Four small request panels (right of it):</b> one per item (fuel, packed sections, capsules, mining fluid). Yellow ASKING NAUVIS = the outpost is waiting for that item to arrive; green = covered. A red panel below says when the fuel request has hit the one-rocket limit.</li>
+    <li><b>Valve panel (west):</b> says which surplus (capsules, sections, packed) is being sent home. <b>Supply dock panel and NET SPLIT panel</b> (below the dock): the dock still holds cargo (warehouse full?) or the dock side cannot see the logic block.</li>
+    <li><b>Receiver:</b> dock holds cargo, ore chest full, parts chest nearly full. If any stays lit the outpost is waiting: something has to consume the ore. Launches only happen to an empty dock.</li>
+    <li><b>Nauvis sender:</b> a pad panel (waiting on liquid fuel, own sections, capsule, loaded and waiting, loading, idle), a requester-chest panel (which item the bots have not delivered) and a link panel beside the AAI receiver (it also reports STALE WIRE: an old wire joining the receiver to the pad). Both ends of a route must come from the same book (route key).</li>
+  </ul></div></details>
+  <details><summary>Things worth knowing</summary><div class="dbody"><ul>
+    <li><b>Productivity modules</b> in the refineries raise the liquid fuel per fuel item (the blueprint requests the modules; the tool shows the bonus and the speed you give up). The outpost converts stock and requests with the same figure, so the number of fuel items it asks for falls as productivity rises.</li>
+    <li>The receiver sorts ore from everything else. Ore goes to a passive-provider warehouse and the east belt; recovered sections, capsules and the valve surplus go to an active-provider storehouse so they flow into your storage and can be reused. If the ore is not consumed the dock stays full and the next launch waits.</li>
+    <li>Cargo scales the cost: a half-empty rocket burns less fuel and fewer sections, so a small supply load is cheaper than a full one.</li>
+    <li>Ores that need a fluid to mine (iridium, naquium and uranium need sulfuric acid) get a second supply line. <b>Barrels:</b> filled barrels ride in the supply rocket, an assembler unbarrels them into a tank, empties fly home. <b>Sulfur + plates:</b> sulfur, iron plates (and optionally water ice) ride in the supply rocket and chemical plants make acid on site (planet outposts only). Either way you connect your drills to the pipe stub on the acid tank.</li>
+    <li>Space Exploration does not allow ordinary belts, pipes or assemblers in space, so the orbit receiver and the space outpost use space belts, space pipes and a space assembler, on scaffold tiles that are part of the blueprint.</li>
+  </ul></div></details>
+  <p class="credit" style="padding:0 var(--s4) var(--s4)">Icons, machine sprites and belt animations are Wube Software's and the Space Exploration authors' artwork, taken from the local game install for personal offline use: do not redistribute this file. Text is set in Titillium Web (SIL Open Font License 1.1).</p>
+</section>
+</div>
+<div class="tip-f" id="tipf" role="tooltip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*__ASSETS__*/
+</script>
+<script>
+/*__BELTS__*/
+</script>
+<script>
+/*__BPGEN__*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const MATS = [
+    ['se-holmium-ore', 'Holmium Ore', 20], ['se-iridium-ore', 'Iridium Ore', 10], ['se-vulcanite', 'Vulcanite', 20], ['se-cryonite', 'Cryonite', 20],
+    ['se-beryllium-ore', 'Beryllium Ore', 50], ['se-naquium-ore', 'Naquium Ore', 10], ['se-vitamelange', 'Vitamelange', 20],
+    ['se-water-ice', 'Water Ice', 200], ['se-methane-ice', 'Methane Ice', 200],
+    ['iron-ore', 'Iron Ore', 50], ['copper-ore', 'Copper Ore', 50], ['coal', 'Coal', 50], ['stone', 'Stone', 50], ['uranium-ore', 'Uranium Ore', 50],
+    ['se-core-fragment-omni', 'Omni Core Fragment', 50],
+  ];
+  const DEFAULTS = { planet: 'Calidus', mat: 'se-holmium-ore', customItem: 'se-holmium-ore', dest: 'nauvis', fuelItems: 2500, launchFuel: '', packed: 20, capsules: 1, prodTier: '0', space: '0',
+    reserve: '2', refineries: '2', belt: 'fast-transport-belt', assembler: 'assembling-machine-3', bulk: '1', channel: '', fluidMode: 'auto', fluidName: 'sulfuric-acid', fluidPerOre: '', barrels: '', fluidSupply: 'barrels', fluidWater: 'pipe', debug: '1' };
+  const KEY = 'rocket-route-blueprints-v1';
+
+  const PROD = [0, .04, .06, .08, .10, .12, .14, .16, .18, .20], SLOW = [0, .10, .15, .20, .25, .30, .35, .40, .45, .50];
+  for (let t = 0; t <= 9; t++) {
+    const p = Math.round(3 * PROD[t] * 100), v = Math.round(Math.max(0.2, 1 - 3 * SLOW[t]) * 100);
+    $('prodTier').add(new Option(t ? `Productivity ${t}: +${p}% fuel, ${v}% speed${v <= 20 ? ' (floor)' : ''}` : 'None: +0% fuel, 100% speed', String(t)));
+  }
+  const sel = $('mat');
+  for (const m of MATS) sel.add(new Option(`${m[1]}  (stack ${m[2]})`, m[0]));
+  sel.add(new Option('Other item...', '__custom'));
+
+  function load() { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return Object.assign({}, DEFAULTS); } }
+  function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* storage unavailable: fine */ } }
+  function readState() {
+    return { planet: $('planet').value, mat: $('mat').value, customItem: $('customItem').value, dest: document.querySelector('input[name=dest]:checked').value, space: document.querySelector('input[name=space]:checked').value, prodTier: $('prodTier').value,
+      fuelItems: $('fuelItems').value, launchFuel: $('launchFuel').value, packed: $('packed').value, capsules: $('capsules').value, reserve: $('reserve').value,
+      refineries: $('refineries').value, belt: $('belt').value, assembler: $('assembler').value, bulk: $('bulk').value, channel: $('channel').value,
+      fluidMode: $('fluidMode').value, fluidName: $('fluidName').value, fluidPerOre: $('fluidPerOre').value, barrels: $('barrels').value, fluidSupply: $('fluidSupply').value, fluidWater: $('fluidWater').value, debug: $('debug').value };
+  }
+  function writeState(s) {
+    $('planet').value = s.planet; $('mat').value = s.mat; $('customItem').value = s.customItem;
+    for (const r of document.querySelectorAll('input[name=dest]')) r.checked = r.value === s.dest;
+    for (const r of document.querySelectorAll('input[name=space]')) r.checked = r.value === s.space;
+    $('prodTier').value = s.prodTier;
+    for (const k of ['fuelItems', 'launchFuel', 'packed', 'capsules', 'reserve', 'refineries', 'belt', 'assembler', 'bulk', 'channel', 'fluidMode', 'fluidName', 'fluidPerOre', 'barrels', 'fluidSupply', 'fluidWater', 'debug']) $(k).value = s[k];
+  }
+  function titleCase(item) { return item.replace(/^se-/, '').split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+  function toConfig(s) {
+    const custom = s.mat === '__custom';
+    const item = custom ? (s.customItem.trim() || 'iron-ore') : s.mat;
+    const preset = MATS.find((m) => m[0] === item);
+    return { planet: s.planet, materialItem: item, materialName: preset ? preset[1] : titleCase(item), dest: s.dest, space: s.space === '1', prodTier: s.prodTier, launchFuel: s.launchFuel, fuelItems: s.fuelItems, packed: s.packed, capsules: s.capsules,
+      reserve: s.reserve, refineries: s.refineries, belt: s.belt, assembler: s.assembler, bulk: s.bulk === '1', channel: s.channel, stack: preset ? preset[2] : (Number(s.customStack) || null),
+      fluidMode: s.fluidMode, fluidName: s.fluidName, fluidPerOre: s.fluidPerOre, barrels: s.barrels, fluidSupply: s.fluidSupply, fluidWater: s.fluidWater, debug: s.debug !== '0' };
+  }
+
+  // ---------- assets (icons, sprites from the local game install; see make_assets.py) ----------
+  const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';   // 1x1 transparent: used when the game artwork has not been built in
+  const ICON = (k) => ASSETS.icons[k] || ASSETS.icons.item || BLANK;
+  for (const im of document.querySelectorAll('img[data-icon]')) im.src = ICON(im.dataset.icon);
+  const PART_ICON = { book: 'section', sender: 'fuel', outpost: 'pad', receiver: 'dock' };
+  const bomIcon = (k) => ASSETS.icons['e:' + k] || (k.indexOf('scaffold') >= 0 ? ASSETS.icons.scaffold : null);
+
+  // ---------- preview ----------
+  const VEC = { 0: [0, -1], 4: [1, 0], 8: [0, 1], 12: [-1, 0] };
+  const SIDE = { 0: 'north', 4: 'east', 8: 'south', 12: 'west' };
+  // belt atlas rows (transport-belts.lua): flow direction -> straight row; "<from side>_to_<flow>" -> curve row; start / end cap rows sit at the end of the flow they belong to
+  const STRAIGHT_ROW = { 4: 0, 12: 1, 0: 2, 8: 3 }, START_ROW = { 8: 12, 12: 14, 0: 16, 4: 18 }, END_ROW = { 0: 13, 4: 15, 8: 17, 12: 19 };
+  const CURVE_ROW = { east_to_north: 4, north_to_east: 5, west_to_north: 6, north_to_west: 7, south_to_east: 8, east_to_south: 9, south_to_west: 10, west_to_south: 11 };
+  const LEGEND = [['#ff5a47', 'Red wire'], ['#5fd06a', 'Green wire']];
+  const PRETTY = { 'aai-warehouse': 'Warehouse', 'aai-warehouse-requester': 'Requester warehouse', 'aai-warehouse-passive-provider': 'Provider warehouse', 'aai-storehouse-active-provider': 'Parts storehouse (active provider)',
+    'se-rocket-launch-pad': 'Rocket launch pad', 'cargo-landing-pad': 'Landing dock', 'se-fuel-refinery': 'Fuel refinery', 'zith-storage-tank-5x5': 'Storage tank (150k)', 'se-space-assembling-machine': 'Space assembling machine',
+    'aai-signal-receiver': 'AAI signal receiver', 'aai-signal-sender': 'AAI signal sender', 'se-space-transport-belt': 'Space transport belt', 'se-space-pipe': 'Space pipe', 'transport-belt': 'Transport belt', 'fast-transport-belt': 'Fast transport belt', 'express-transport-belt': 'Express transport belt' };
+  const prettyName = (n) => PRETTY[n] || titleCase(n);
+  const ROLE_TXT = { lp: 'launch pad', ld: 'landing dock', ore: 'ore buffer', wh: 'stock', tank: 'tank', aai: 'AAI link', refinery: 'refinery', am: 'machine', logic: 'logic', debug: 'status display', power: 'power', valve: 'surplus valve', parts: 'returns' };
+  function labelFor(e) {
+    switch (e.role) {
+      case 'lp': return 'Launch pad'; case 'ld': return 'Landing dock'; case 'ore': return 'Ore warehouse'; case 'tank': return 'Tank'; case 'refinery': return 'Refinery'; case 'parts': return 'Returns';
+      case 'aai': return e.name === 'aai-signal-sender' ? 'AAI sender' : 'AAI receiver';
+      case 'am': return e.name === 'chemical-plant' ? 'Chemical plant' : 'Unpacker';
+      case 'wh': return e.name === 'aai-warehouse-requester' ? 'Requester' : e.name === 'aai-warehouse-passive-provider' ? 'Ore provider' : 'Stock';
+    }
+    return '';
+  }
+  const BELT_FALLBACK = 'transport-belt';
+  function extents(pv) {
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const e of pv.ents) { x0 = Math.min(x0, e.tx); y0 = Math.min(y0, e.ty); x1 = Math.max(x1, e.tx + e.w); y1 = Math.max(y1, e.ty + e.h); }
+    const pad = 2; return { x0, y0, pad, cols: x1 - x0 + pad * 2, rows: y1 - y0 + pad * 2 };
+  }
+  function svgFor(pv, o) {
+    const P = o.P, ex = extents(pv), W = Math.max(ex.cols * P, o.minW || 0), H = Math.max(ex.rows * P, o.minH || 0), k = P / ASSETS.Z;
+    const ox = (W - ex.cols * P) / 2, oy = (H - ex.rows * P) / 2;   // the floor always fills the viewport; the layout sits in the middle
+    const X = (v) => (v - ex.x0 + ex.pad) * P + ox, Y = (v) => (v - ex.y0 + ex.pad) * P + oy;
+    const byN = {}, occ = {};
+    for (const e of pv.ents) { byN[e.n] = e; for (let a = 0; a < e.w; a++) for (let b = 0; b < e.h; b++) occ[(e.tx + a) + ',' + (e.ty + b)] = e; }
+    const space = pv.ents.some((e) => /^se-space-/.test(e.name));
+    const floor = ASSETS.floors[space ? 'se-space-platform-scaffold' : 'refined-concrete'], fs = P * 2;
+    const used = {}, defs = [], beltTiers = {};
+    const img = (key) => { // one <image> per sprite image, reused with <use>
+      const sp = ASSETS.sprites[key]; if (!sp) return null;
+      if (!used[sp.i]) { const im = ASSETS.imgs[sp.i]; used[sp.i] = 'sp' + defs.length; defs.push(`<image id="${used[sp.i]}" href="${im.d}" width="${im.w * k}" height="${im.h * k}"/>`); }
+      return { id: used[sp.i], ox: sp.ox, oy: sp.oy };
+    };
+    const isBelt = (e) => !!e && /transport-belt$/.test(e.name);
+    const beltAt = (x, y) => { const n = occ[x + ',' + y]; return isBelt(n) ? n : null; };
+    const feeds = (n, x, y) => !!n && n.tx + VEC[n.dir][0] === x && n.ty + VEC[n.dir][1] === y;
+    const bk = BELTS.cell * P / BELTS.tile, boff = BELTS.off * P / BELTS.tile;
+    const BELT_COL = { 'transport-belt': '#e0b53f', 'fast-transport-belt': '#e0553b', 'express-transport-belt': '#43a1dc', 'se-space-transport-belt': '#9a6fd8' };
+    const beltPiece = (e, row) => { // a 48 px cell of the animated atlas, clipped by a nested svg
+      if (!BELTS.atlas[e.name] && !BELTS.atlas[BELT_FALLBACK]) { // no artwork built in: flat belt with a chevron
+        if (row > 11) return '';
+        const c = BELT_COL[e.name] || '#999', d = VEC[e.dir] || [0, 0], cx = X(e.tx) + P / 2, cy = Y(e.ty) + P / 2, a = P * .26, px = -d[1], py = d[0];
+        return `<rect x="${X(e.tx) + .5}" y="${Y(e.ty) + .5}" width="${P - 1}" height="${P - 1}" fill="#2b2b2b" stroke="#111"/><path d="M${cx - d[0] * a + px * a} ${cy - d[1] * a + py * a}L${cx + d[0] * a} ${cy + d[1] * a}L${cx - d[0] * a - px * a} ${cy - d[1] * a - py * a}" fill="none" stroke="${c}" stroke-width="${Math.max(1.5, P / 8)}" stroke-linecap="square"/>`;
+      }
+      const tier = BELTS.atlas[e.name] ? e.name : BELT_FALLBACK; beltTiers[tier] = 1;
+      return `<svg x="${X(e.tx) - boff}" y="${Y(e.ty) - boff}" width="${bk}" height="${bk}" viewBox="0 0 ${BELTS.cell} ${BELTS.cell}"><g transform="translate(0 ${-row * BELTS.cell})"><use href="#bt_${tier}" class="ba ba-${tier}"/></g></svg>`;
+    };
+    let body = '', caps = '', capsDone = false;
+    const isLow = (e) => /belt$|pipe$/.test(e.name) ? 1 : 0;
+    const order = pv.ents.slice().sort((a, b) => (isLow(b) - isLow(a)) || (a.ty - b.ty) || (a.tx - b.tx));
+    const pipeLike = (e) => !!e && /pipe$/.test(e.name), fluidM = (e) => !!e && /storage-tank|fuel-refinery|chemical-plant/.test(e.name);
+    const tag = (e) => `data-t="${prettyName(e.name).replace(/"/g, '')}" data-n="${e.name}" data-r="${e.role || ''}"`;
+    for (const e of order) {
+      if (!isLow(e) && !capsDone) { body += caps; capsDone = true; }
+      const tx = X(e.tx), ty = Y(e.ty);
+      if (isBelt(e)) {
+        const d = e.dir, v = VEC[d] || [0, 0];
+        const straightIn = feeds(beltAt(e.tx - v[0], e.ty - v[1]), e.tx, e.ty);
+        const ins = [];
+        for (const s of [(d + 4) % 16, (d + 12) % 16]) { const n = beltAt(e.tx + VEC[s][0], e.ty + VEC[s][1]); if (feeds(n, e.tx, e.ty)) ins.push(s); }
+        const curve = ins.length === 1 && !straightIn;
+        const row = curve ? CURVE_ROW[SIDE[ins[0]] + '_to_' + SIDE[d]] : STRAIGHT_ROW[d];
+        body += `<g ${tag(e)}>${beltPiece(e, row === undefined ? 0 : row)}</g>`;
+        if (!straightIn && !ins.length) caps += `<g ${tag(e)}>${beltPiece(e, START_ROW[d])}</g>`;       // nothing feeds it: roller at the start
+        if (!beltAt(e.tx + v[0], e.ty + v[1])) caps += `<g ${tag(e)}>${beltPiece(e, END_ROW[d])}</g>`;    // nothing in front: roller at the end
+        continue;
+      }
+      let key = e.name + '|' + e.dir;
+      if (/pipe$/.test(e.name)) {
+        let m = 0;
+        for (const [bit, d] of [[1, [0, -1]], [2, [1, 0]], [4, [0, 1]], [8, [-1, 0]]]) { const n = occ[(e.tx + d[0]) + ',' + (e.ty + d[1])]; if (pipeLike(n) || fluidM(n)) m |= bit; }
+        key = e.name + '|m' + m;
+      } else if (!ASSETS.sprites[key]) key = e.name + '|0';
+      let im = img(key), sc = 1;
+      if (!im && /^aai-storehouse/.test(e.name)) { im = img('aai-warehouse|0'); sc = e.w / 6; }   // no storehouse sprite captured: the warehouse art, scaled to its footprint
+      if (im) body += `<g ${tag(e)}><use href="#${im.id}" ${sc === 1 ? `x="${tx + im.ox * P}" y="${ty + im.oy * P}"` : `transform="translate(${tx} ${ty}) scale(${sc})" x="${im.ox * P}" y="${im.oy * P}"`}/></g>`;
+      else body += `<g ${tag(e)}><rect x="${tx + 1}" y="${ty + 1}" width="${e.w * P - 2}" height="${e.h * P - 2}" rx="${P * .15}" fill="#34332f" stroke="#e39827" stroke-opacity=".55" stroke-width="1.5"/><image href="${ICON('e:' + e.name)}" x="${tx + e.w * P / 2 - P}" y="${ty + e.h * P / 2 - P}" width="${P * 2}" height="${P * 2}"/>${ASSETS.icons['e:' + e.name] || e.w < 2 || labelFor(e) ? '' : `<text class="lbl-t" x="${tx + e.w * P / 2}" y="${ty + e.h * P / 2 + 4}" text-anchor="middle" style="font-size:${Math.min(11, P * .45)}px">${prettyName(e.name)}</text>`}</g>`;
+    }
+    if (!capsDone) body += caps;
+    for (const t of Object.keys(beltTiers)) defs.push(`<image id="bt_${t}" href="${BELTS.atlas[t]}" width="${BELTS.cell * BELTS.frames}" height="${BELTS.cell * 20}"/>`);
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Blueprint layout"><defs><pattern id="fl" width="${fs}" height="${fs}" patternUnits="userSpaceOnUse"><image href="${floor.d}" width="${fs}" height="${fs}"/></pattern>` +
+      `<pattern id="gr" width="${P}" height="${P}" patternUnits="userSpaceOnUse"><path d="M${P} 0H0V${P}" fill="none" stroke="#000" stroke-opacity=".22"/></pattern>${defs.join('')}</defs>` +
+      `<rect width="${W}" height="${H}" fill="url(#fl)"/><rect width="${W}" height="${H}" fill="#000" fill-opacity=".34"/>${P >= 11 ? `<rect width="${W}" height="${H}" fill="url(#gr)"/>` : ''}` + body;
+    if (o.wires) for (const w of pv.wires) {
+      const a = byN[w.a], b = byN[w.b]; if (!a || !b) continue;
+      s += `<line x1="${X(a.tx + a.w / 2)}" y1="${Y(a.ty + a.h / 2)}" x2="${X(b.tx + b.w / 2)}" y2="${Y(b.ty + b.h / 2)}" stroke="${w.green ? '#5fd06a' : '#ff5a47'}" stroke-width="${Math.max(1, P / 14).toFixed(2)}" stroke-opacity=".78" stroke-linecap="round" pointer-events="none"/>`;
+    }
+    if (o.labels && P >= 9) for (const e of pv.ents) {
+      const t = labelFor(e); if (!t) continue;
+      const fs2 = Math.max(10, Math.min(15, P * .55));
+      s += `<text class="lbl-t" x="${X(e.tx + e.w / 2)}" y="${Y(e.ty + e.h / 2) + fs2 * .35}" text-anchor="middle" style="font-size:${fs2}px">${t}</text>`;
+    }
+    return { svg: s + '</svg>', W, H, ext: ex };
+  }
+
+  // ---------- zoom, pan, tooltip ----------
+  const UIKEY = 'rocket-route-ui-v2';
+  const ui = Object.assign({ wires: true, labels: true, anim: !matchMedia('(prefers-reduced-motion: reduce)').matches }, (() => { try { return JSON.parse(localStorage.getItem(UIKEY) || '{}'); } catch (e) { return {}; } })());
+  function saveUi() { try { localStorage.setItem(UIKEY, JSON.stringify(ui)); } catch (e) { /* fine */ } }
+  let zoom = 'fit', curP = 18, curPv = null;
+  const vp = () => $('preview');
+  function fitP(ext) { const v = vp(); return Math.max(6, Math.min(30, Math.min((v.clientWidth - 6) / ext.cols, (v.clientHeight - 6) / ext.rows))); }
+  function drawPreview(keep) {
+    if (!curPv) return;
+    const v = vp(), ext = extents(curPv);
+    const P = zoom === 'fit' ? fitP(ext) : zoom; curP = P;
+    const rx = keep && v.scrollWidth ? (v.scrollLeft + keep.mx) / v.scrollWidth : 0, ry = keep && v.scrollHeight ? (v.scrollTop + keep.my) / v.scrollHeight : 0;
+    const r = svgFor(curPv, { P, wires: ui.wires, labels: ui.labels, minW: v.clientWidth, minH: v.clientHeight });
+    v.innerHTML = r.svg; v.classList.toggle('still', !ui.anim);
+    if (keep) { v.scrollLeft = rx * v.scrollWidth - keep.mx; v.scrollTop = ry * v.scrollHeight - keep.my; }
+    $('zVal').textContent = Math.round(P / 32 * 100) + '%';
+    $('zFit').classList.toggle('done', zoom === 'fit');
+  }
+  function zoomBy(f, at) {
+    const v = vp(), r = v.getBoundingClientRect();
+    zoom = Math.max(6, Math.min(64, curP * f));
+    drawPreview({ mx: at ? at.x - r.left : v.clientWidth / 2, my: at ? at.y - r.top : v.clientHeight / 2 });
+  }
+  const tipEl = () => $('tipf');
+  function wireViewport() {
+    const v = vp(); let drag = null;
+    v.addEventListener('pointerdown', (ev) => { if (ev.pointerType !== 'mouse' || ev.button !== 0) return; drag = { x: ev.clientX, y: ev.clientY, sl: v.scrollLeft, st: v.scrollTop }; v.classList.add('drag'); v.setPointerCapture(ev.pointerId); });
+    v.addEventListener('pointermove', (ev) => {
+      if (drag) { v.scrollLeft = drag.sl - (ev.clientX - drag.x); v.scrollTop = drag.st - (ev.clientY - drag.y); tipEl().classList.remove('on'); return; }
+      const g = ev.target.closest && ev.target.closest('[data-t]'), t = tipEl();
+      if (!g) { t.classList.remove('on'); return; }
+      const role = ROLE_TXT[g.dataset.r];
+      t.innerHTML = `${g.dataset.t}<small>${g.dataset.n}${role ? ' - ' + role : ''}</small>`;
+      t.style.left = Math.min(innerWidth - 300, ev.clientX + 16) + 'px'; t.style.top = (ev.clientY + 18) + 'px'; t.classList.add('on');
+    });
+    const end = () => { drag = null; v.classList.remove('drag'); };
+    v.addEventListener('pointerup', end); v.addEventListener('pointercancel', end);
+    v.addEventListener('pointerleave', () => tipEl().classList.remove('on'));
+    v.addEventListener('wheel', (ev) => { if (!(ev.ctrlKey || ev.metaKey)) return; ev.preventDefault(); zoomBy(ev.deltaY < 0 ? 1.15 : 1 / 1.15, { x: ev.clientX, y: ev.clientY }); }, { passive: false });
+    v.addEventListener('keydown', (ev) => { if (ev.key === '+' || ev.key === '=') zoomBy(1.2); else if (ev.key === '-') zoomBy(1 / 1.2); else if (ev.key === '0') { zoom = 'fit'; drawPreview(); } });
+    let raf = 0; if (window.ResizeObserver) new ResizeObserver(() => { if (zoom !== 'fit') return; cancelAnimationFrame(raf); raf = requestAnimationFrame(() => drawPreview()); }).observe(v);
+  }
+
+  // ---------- rendering ----------
+  let out = null, strings = {}, active = 'book', seq = 0;
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1800); }
+  function flash(btn) {
+    if (!btn) return; if (!btn.dataset.l) btn.dataset.l = btn.textContent;
+    btn.classList.add('done'); btn.textContent = 'Copied'; clearTimeout(btn.t);
+    btn.t = setTimeout(() => { btn.classList.remove('done'); btn.textContent = btn.dataset.l; }, 1400);
+  }
+  async function copyText(text, btn) {
+    try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); flash(btn); }
+    catch (e) { const ta = $('str'); const prev = ta.value; ta.value = text; ta.select(); document.execCommand('copy'); ta.value = prev; toast('Copied'); flash(btn); }
+  }
+  function tabsHtml() {
+    const items = [['book', 'Whole book']].concat(out.parts.map((p, i) => [p.key, `${i + 1}. ${p.title}`]));
+    $('tabs').innerHTML = items.map(([k, label]) => `<button class="tab" role="tab" type="button" data-k="${k}" aria-selected="${k === active}"><img src="${ICON(PART_ICON[k] || 'item')}" alt="">${label}</button>`).join('');
+  }
+  function show() {
+    if (!out) return;
+    tabsHtml();
+    const text = strings[active] || '';
+    $('str').value = text;
+    const part = out.parts.find((p) => p.key === active) || out.parts[1];
+    const ents = active === 'book' ? out.parts.reduce((n, p) => n + p.json.entities.length, 0) : part.json.entities.length;
+    $('strMeta').textContent = `${text.length.toLocaleString('en-US')} characters / ${ents} entities`;
+    $('pvTitle').textContent = `Layout: ${part.title}`;
+    curPv = part.preview; drawPreview();
+    const bom = part.bom, total = Object.keys(bom).reduce((n, k) => n + bom[k], 0);
+    $('bom').innerHTML = '<thead><tr><th>Entity</th><th class="n">Count</th></tr></thead><tbody>' + Object.keys(bom).sort((a, b) => bom[b] - bom[a]).map((k) => { const ic = bomIcon(k); return `<tr><td class="nm">${ic ? `<img src="${ic}" alt="">` : '<span class="ph"></span>'}<span class="mono">${k}</span></td><td class="n">${bom[k]}</td></tr>`; }).join('') + `</tbody><tfoot><tr><th>Total</th><th class="n">${total}</th></tr></tfoot>`;
+  }
+  function notes(cfgx) {
+    const n = [];
+    const errs = out.parts.flatMap((p) => p.errors.map((e) => `${p.title}: ${e}`));
+    for (const e of errs) n.push(['bad', e]);
+    for (const w of out.warnings) n.push([/needs ~|may need ~|nearly full/.test(w) ? 'warn' : 'info', w]);
+    const r = out.cfg.refineries;
+    const fl = out.cfg.fluid;
+    $('fluidRow').hidden = $('fluidMode').value !== 'custom';
+    const acid = fl && fl.name === 'sulfuric-acid';
+    $('supplyRows').hidden = !fl;
+    if (fl) {
+      const sul = fl.supply === 'sulfur';
+      $('fluidSupply').querySelector('option[value=sulfur]').disabled = !acid || out.cfg.space;
+      $('waterRow').hidden = !sul;
+      $('amtLbl').textContent = sul ? 'Sulfur per supply rocket' : 'Barrels per supply rocket';
+      $('supplyHint').textContent = sul
+        ? 'Per 50 acid: 5 sulfur + 1 iron plate + 100 water. Plates and ice are shipped at 1/5 of the sulfur count. Nothing comes back, no barrels to refill.'
+        : 'A barrel holds 50 fluid, 10 barrels per slot. Empty barrels fly home with the ore for your factory to refill.';
+    }
+    $('fluidHint').textContent = fl
+      ? `${out.cfg.materialName} needs ${fl.per} ${fl.name} per ore. ${fl.supply === 'sulfur' ? 'Sulfur, plates' + (fl.water === 'ice' ? ' and water ice' : '') + ' travel in the supply rockets and chemical plants make the acid into a 150k tank with a pipe stub for your drills.' : 'Barrels travel in the supply rockets, are unbarrelled into a 150k tank west of the warehouse and leave through a pipe stub for your drills.'}`
+      : ($('fluidMode').value === 'none' ? 'No fluid logistics.' : `${out.cfg.materialName} needs no mining fluid, so no barrel logistics are added.`);
+    const pl = out.plan;
+    $('refHint').textContent = `${Math.round(pl.perSec)} liquid fuel per second (${pl.itemsPerSec.toFixed(2)} fuel items/s). ${pl.known ? 'This launch' : 'A launch of 60,000 (example)'} needs ${pl.itemsPerLaunch.toLocaleString('en-US')} fuel items and about ${(pl.secPerLaunch / 60).toFixed(1)} min to restock.`;
+    $('modHint').textContent = out.cfg.prodTier ? `One fuel item makes ${pl.K} liquid fuel instead of 50. Modules are requested into the refineries by the blueprint (bots deliver them). The refineries run at ${Math.round(pl.speed * 100)}% speed, so add refineries if restocking gets too slow.` : 'No modules: 50 liquid fuel per fuel item.';
+    $('fuelItems').disabled = out.cfg.launchFuel > 0; if (out.cfg.launchFuel > 0) $('fuelItems').value = out.cfg.fuelItems;
+    $('spaceHint').textContent = out.cfg.space ? 'Space belts, a space assembler for the unpacker, space pipes and scaffold tiles. No chemical plants in space, so mining fluid comes as barrels.' : 'Ordinary belts and machines.';
+    $('destHint').textContent = out.cfg.dest === 'orbit'
+      ? 'Orbit: scaffold tiles are included and the belt is a space belt. Pick a clear patch of orbit (asteroid tiles cannot take scaffold).'
+      : 'Surface: place anywhere on Nauvis. Ordinary belt tier is used for the output belt.';
+    $('notes').innerHTML = n.map(([c, t]) => `<div class="note ${c === 'bad' ? 'bad' : c === 'warn' ? 'warn' : ''}"><span>${t.replace(/</g, '&lt;')}</span></div>`).join('');
+    const ok = errs.length === 0;
+    const per = cfgx.stack ? Math.floor(cfgx.stack * 498) : 0, entTotal = out.parts.reduce((t, p) => t + p.json.entities.length, 0);
+    const kp = [
+      [ICON(/^__custom$/.test($('mat').value) ? 'item' : $('mat').value), per ? per.toLocaleString('en-US') : 'unknown', per ? `${out.cfg.materialName} per rocket (498 slots x ${cfgx.stack})` : 'ore per rocket (stack size unknown for a custom item)'],
+      [ICON('fuel'), pl.itemsPerLaunch.toLocaleString('en-US'), pl.known ? 'fuel items per launch' : 'fuel items per launch (60k example)'],
+      [ICON('refinery'), (pl.secPerLaunch / 60).toFixed(1) + ' min', `to restock a launch (${out.cfg.refineries} refineries, ${Math.round(pl.speed * 100)}% speed)`],
+      [ICON('liquid'), pl.K + '', out.cfg.prodTier ? `liquid fuel per item (+${Math.round(pl.K / 50 * 100 - 100)}% productivity)` : 'liquid fuel per fuel item'],
+      [ICON('section'), entTotal.toLocaleString('en-US'), 'entities in the three blueprints'],
+    ];
+    $('kpis').innerHTML = kp.map(([ic, v, l]) => `<div class="kpi"><span class="slot"><img src="${ic}" alt=""></span><div><b>${v}</b><span class="l">${l}</span></div></div>`).join('');
+    $('status').innerHTML = `<span class="dot ${ok ? 'ok' : 'bad'}"></span><span>${ok ? 'Layout checks passed: no overlaps, all inserters hit their targets, everything powered' : 'Layout problem, see notes'}</span>`;
+  }
+  async function rebuild() {
+    const my = ++seq;
+    const s = readState();
+    const cfgx = toConfig(s);
+    const isCustom = s.mat === '__custom';
+    $('customRow').hidden = !isCustom;
+    $('matIcon').src = ICON(isCustom ? 'item' : s.mat);
+    const built = BPGEN.build(cfgx);
+    const enc = { book: await BPGEN.encode(built.book) };
+    for (const p of built.parts) enc[p.key] = await BPGEN.encode({ blueprint: p.json });
+    if (my !== seq) return;
+    out = built; strings = enc;
+    if (!out.parts.find((p) => p.key === active) && active !== 'book') active = 'book';
+    $('title').textContent = built.book.blueprint_book.label;
+    notes(cfgx);
+    show();
+  }
+  let timer = 0;
+  function schedule() { clearTimeout(timer); timer = setTimeout(() => { save(readState()); rebuild().catch((e) => { $('status').innerHTML = '<span class="dot bad"></span><span>Error: ' + e.message + '</span>'; }); }, 120); }
+
+  // fuel helper: liquid fuel -> item count (rounded up to 50)
+  for (const el of document.querySelectorAll('#cfg input, #cfg select')) { el.addEventListener('input', schedule); el.addEventListener('change', schedule); }
+  $('tabs').addEventListener('click', (ev) => { const b = ev.target.closest('.tab'); if (!b) return; active = b.dataset.k; show(); });
+  for (const [id, key] of [['showWires', 'wires'], ['showLabels', 'labels'], ['animBelts', 'anim']]) { $(id).checked = !!ui[key]; $(id).addEventListener('change', () => { ui[key] = $(id).checked; saveUi(); drawPreview(); }); }
+  $('zIn').addEventListener('click', () => zoomBy(1.25)); $('zOut').addEventListener('click', () => zoomBy(1 / 1.25)); $('zFit').addEventListener('click', () => { zoom = 'fit'; drawPreview(); });
+  wireViewport();
+  $('copyBook').addEventListener('click', (ev) => copyText(strings.book || '', ev.currentTarget));
+  $('copyStr').addEventListener('click', (ev) => copyText(strings[active] || '', ev.currentTarget));
+  $('str').addEventListener('focus', () => $('str').select());
+  $('dlBook').addEventListener('click', () => {
+    const blob = new Blob([strings.book || ''], { type: 'text/plain' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = (out ? out.book.blueprint_book.label.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') : 'rocket-route') + '.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('reset').addEventListener('click', () => { writeState(DEFAULTS); schedule(); });
+  $('legend').innerHTML = LEGEND.map((l) => `<span><i style="background:${l[0]}"></i>${l[1]}</span>`).join('') + '<span class="tip">Hover a machine for its name. Drag to pan. Ctrl + scroll to zoom.</span>';
+
+  writeState(load());
+  window.__rocketRoute = { get strings() { return strings; }, get out() { return out; }, svgFor, extents };
+  rebuild();
+})();
+</script>
+</body>
+</html>

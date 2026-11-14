@@ -1,0 +1,7 @@
+dist/
+src/assets.js
+src/belts.js
+src/fonts.css
+*.woff2
+__pycache__/
+node_modules/
